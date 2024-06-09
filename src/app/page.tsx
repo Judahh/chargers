@@ -176,6 +176,7 @@ export default function Home() {
   const [filteredMarkers, setFilteredMarkers] = React.useState<Array<Marker>>([]);
   const [filter, setFilter] = React.useState<MarkerFilter>({} as MarkerFilter);
   const [menu, setMenu] = React.useState<boolean>(false);
+  const [empty, setEmpty] = React.useState<boolean>(true);
 
   const getUrl = (toUrl: string, receivedQuery?: any) => {
     let query = {
@@ -443,7 +444,9 @@ export default function Home() {
     const data: EzVoltPin[] = (await response.json()).pins;
     console.log('EzVolt Pins:', data);
     setEzVoltPins(data);
-    return getEzVolt(data);;
+    const newEzVolt = await getEzVolt(data);
+    updateIfEmpty(newEzVolt);
+    return newEzVolt;
   };
 
   const getTupiLong = async () => {
@@ -454,6 +457,7 @@ export default function Home() {
     console.log('Tupi:', data);
     const tupi = data.map(tupiToMarker);
     setTupi(tupi);
+    updateIfEmpty(tupi);
     return tupi;
   };
 
@@ -470,6 +474,7 @@ export default function Home() {
     console.log('Zletric:', data);
     const zletric = data.map(zletricToMarker);
     setZletric(zletric);
+    updateIfEmpty(zletric);
     return zletric;
   };
 
@@ -481,6 +486,7 @@ export default function Home() {
     const audi = data.map(audiToMarker);
     console.log('Audi:', audi);
     setAudi(audi);
+    updateIfEmpty(audi);
     return audi;
   };
 
@@ -492,6 +498,7 @@ export default function Home() {
     const yellotMob = data.map(yellotMobToMarker);
     console.log('YellotMob:', yellotMob);
     setYellotMob(yellotMob);
+    updateIfEmpty(yellotMob);
     return yellotMob;
   };
 
@@ -503,6 +510,7 @@ export default function Home() {
     const volvo = data.map(volvoToMarker);
     console.log('Volvo AC:', volvo);
     setVolvoAC(volvo);
+    updateIfEmpty(volvo);
     return volvo;
   };
 
@@ -514,6 +522,7 @@ export default function Home() {
     const volvo = data.map(volvoToMarker);
     console.log('Volvo AC:', volvo);
     setVolvoAC(volvo);
+    updateIfEmpty(volvo);
     return volvo;
   };
 
@@ -693,11 +702,30 @@ export default function Home() {
     return filtered;
   }
 
+  const updateIfEmpty = async (newMarkers?: Marker[]) => {
+    if(!newMarkers) {
+      return;
+    }
+    if (markers.length === 0 || empty) {
+      if(markers.length) {
+        newMarkers = mergeMarkers([markers, newMarkers]);
+      }
+      setMarkers(newMarkers);
+      const filtered = filterMarkers(newMarkers, camera, filter);
+      setFilteredMarkers(filtered);
+      console.log('New Filtered:', filtered.length);
+      console.log('New All:', newMarkers.length);
+    }
+  }
+
   const getAll = async () => {
-    const all = await Promise.all([getPosition(), getFullEzVolt(), getTupiLong(), getZletric(), getAudi(), getYellotMob(), getVolvoAc(), getVolvoDc()]);
-    const [position, ezVolt, tupi, zletric, audi, yellotMob, volvoAC, volvoDC] = all;
+    const position = await getPosition();
+    const promises = [getFullEzVolt(), getTupiLong(), getZletric(), getAudi(), getYellotMob(), getVolvoAc(), getVolvoDc()];
+    const all = await Promise.all(promises);
+    const [ezVolt, tupi, zletric, audi, yellotMob, volvoAC, volvoDC] = all;
     const allMarkers = mergeMarkers([ezVolt, tupi, zletric, audi, yellotMob, volvoAC, volvoDC]);
     console.log('All:', allMarkers);
+    setEmpty(false);
     setMarkers(allMarkers);
     const filtered = filterMarkers(allMarkers, camera, filter);
     setFilteredMarkers(filtered);
