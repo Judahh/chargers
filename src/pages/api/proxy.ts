@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import axios from 'axios';
 
-function setdata(object){
+function setdata(object:unknown){
     return object;
 }
 
