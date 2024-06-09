@@ -8,6 +8,86 @@
   min-width: 100vw;
 }
 
+.menu {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 1rem 2rem;
+  position: fixed;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  background: rgba(var(--background-rgb), 0.9);
+  transition: background 200ms;
+}
+
+.menu a {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.menu a:hover {
+  color: var(--primary);
+}
+
+.menu a.active {
+  color: var(--primary);
+}
+
+.menu a.active::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--primary);
+}
+
+.menu a.active:hover {
+  color: var(--primary);
+}
+
+.menu a.active:hover::after {
+  background: var(--primary);
+}
+
+.menu a:hover::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--primary);
+}
+
+.menu a::after {
+  content: "";
+  display: block;
+  width: 0;
+  height: 2px;
+  background: var(--primary);
+  transition: width 200ms;
+}
+
+.menuHidden {
+  display: none;
+}
+
+.menuButton {
+  /* Floating menu button at the bottom */
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 100;
+  background: var(--primary);
+  color: var(--background);
+  border: none;
+  border-radius: 50%;
+  padding: 1rem;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  transition: background 200ms;
+}
+
 .description {
   display: inherit;
   justify-content: inherit;

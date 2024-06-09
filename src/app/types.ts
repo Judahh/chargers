@@ -299,11 +299,19 @@ type Tupi = {
     visibility: boolean;
 }
 
+type Price = {
+    currency?: string,
+    value?: number;
+    unit?: "hour" | "session" | "kwh" | "minute" | "day";
+};
+
 type Marker = {
     id?: string;
+    api: "ezvolt" | "yellotmob" | "zletric" | "volvo" | "audi" | "tupi";
     isPrivate?: boolean;
     position?: { lat: number, lng: number };
     address?: string;
+    zipCode?: string;
     name?: string;
     description?: string;
     rating?: number;
@@ -311,11 +319,7 @@ type Marker = {
     status?: "available" | "busy" | "unknown" | "offline";
     parking?: {
         isFree?: boolean;
-        price?: Array<{
-            currency?: string,
-            value?: number;
-            unit?: "hour" | "session" | "kwh" | "minute" | "day";
-        }>
+        price?: Array<Price>
     };
     pictures?: Array<string>;
     plugs: Array<{
@@ -329,11 +333,7 @@ type Marker = {
         type?: "type1" | "type2" | "ccs" | "ccs1" | "ccs2" | "chademo" | "tesla" | "nema" | "j1772" | "schuko" | "cee" | "other" | "unknown" | Array<"type1" | "type2" | "ccs" | "ccs1" | "ccs2" | "chademo" | "tesla" | "nema" | "j1772" | "schuko" | "cee" | "other" | "unknown">;
         status?: "available" | "busy" | "unknown" | "offline";
         isFree?: boolean;
-        price?: Array<{
-            currency?: string,
-            value?: number;
-            unit?: "hour" | "session" | "kwh" | "minute" | "day";
-        }> | undefined;
+        price?: Array<Price> | undefined;
         reservationQueue?: Array<{
             id?: string | number;
             userId?: string;
@@ -352,4 +352,50 @@ type Marker = {
     endsAt?: Date;
 };
 
-export type { EzVoltPin, EzVoltLocation, EzVoltCurrency, EzVoltTariff, EzVolt, YellotMob, Zletric, Volvo, Audi, Tupi, Marker };
+type MinMaxFilter = {
+    min?: number,
+    max?: number
+};
+
+type MinMaxDateFilter = {
+    min?: Date | string,
+    max?: Date | string,
+};
+
+type PriceFilter = {
+    currency?: string | Array<string>,
+    value?: number | Array<number> | MinMaxFilter;
+    unit?: "hour" | "session" | "kwh" | "minute" | "day" | Array<"hour" | "session" | "kwh" | "minute" | "day">;
+};
+
+type MarkerFilter = {
+    api?: "ezvolt" | "yellotmob" | "zletric" | "volvo" | "audi" | "tupi" | Array<"ezvolt" | "yellotmob" | "zletric" | "volvo" | "audi" | "tupi">;
+    isPrivate?: boolean;
+    rating?: number | Array<number> | MinMaxFilter;
+    totalRatings?: number | Array<number> | MinMaxFilter;
+    status?: "available" | "busy" | "unknown" | "offline" | Array<"available" | "busy" | "unknown" | "offline">;
+    parking?: {
+        isFree?: boolean;
+        price?: PriceFilter
+    };
+    plugs: {
+        isPrivate?: boolean;
+        brand?: string | Array<string>;
+        rating?: number | Array<number> | MinMaxFilter;
+        totalRatings?: number | Array<number> | MinMaxFilter;
+        maxPower?: number | Array<number> | MinMaxFilter;
+        currentType?: "ac" | "dc" | "ac/dc" | "unknown" | Array<"ac" | "dc" | "ac/dc" | "unknown">;
+        type?: "type1" | "type2" | "ccs" | "ccs1" | "ccs2" | "chademo" | "tesla" | "nema" | "j1772" | "schuko" | "cee" | "other" | "unknown" | "all" | Array<"type1" | "type2" | "ccs" | "ccs1" | "ccs2" | "chademo" | "tesla" | "nema" | "j1772" | "schuko" | "cee" | "other" | "unknown">;
+        status?: "available" | "busy" | "unknown" | "offline" | Array<"available" | "busy" | "unknown" | "offline">;
+        isFree?: boolean;
+        price?: PriceFilter;
+        reservationQueueSize?: number | Array<number> | MinMaxFilter;
+        reservationQueueTime?: Date | Array<Date> | MinMaxDateFilter;
+
+    };
+    reservationQueueSize?: number | Array<number> | MinMaxFilter;
+    reservationQueueTime?: Date | Array<Date> | MinMaxDateFilter;
+    endsAt?: Date | Array<Date> | MinMaxDateFilter;
+};
+
+export type { EzVoltPin, EzVoltLocation, EzVoltCurrency, EzVoltTariff, EzVolt, YellotMob, Zletric, Volvo, Audi, Tupi, Marker, MarkerFilter, Price, PriceFilter };
