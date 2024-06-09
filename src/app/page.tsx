@@ -173,10 +173,12 @@ export default function Home() {
   // const [iternio, setIternio] = React.useState<Array<Marker>>([]);
   // const [plugShare, setPlugShare] = React.useState<Array<Marker>>([]);
   const [markers, setMarkers] = React.useState<Array<Marker>>([]);
+  let tempMarkers: Array<Marker> = [];
   const [filteredMarkers, setFilteredMarkers] = React.useState<Array<Marker>>([]);
   const [filter, setFilter] = React.useState<MarkerFilter>({} as MarkerFilter);
   const [menu, setMenu] = React.useState<boolean>(false);
   const [empty, setEmpty] = React.useState<boolean>(true);
+  let tempEmpty = true;
 
   const getUrl = (toUrl: string, receivedQuery?: any) => {
     let query = {
@@ -706,10 +708,15 @@ export default function Home() {
     if(!newMarkers) {
       return;
     }
-    if (markers.length === 0 || empty) {
-      if(markers.length) {
-        newMarkers = mergeMarkers([markers, newMarkers]);
+    const tMakers = [...(tempMarkers||[]), ...(markers||[])];
+    if (empty && tempEmpty) {
+      if(tMakers.length > 0) {
+        console.log('Merge:', tMakers.length, newMarkers.length);
+        newMarkers = mergeMarkers([tMakers, newMarkers]);
+      } else {
+        console.log('New (No Merge):', tMakers.length, newMarkers.length);
       }
+      tempMarkers = [...newMarkers];
       setMarkers(newMarkers);
       const filtered = filterMarkers(newMarkers, camera, filter);
       setFilteredMarkers(filtered);
@@ -726,6 +733,7 @@ export default function Home() {
     const allMarkers = mergeMarkers([ezVolt, tupi, zletric, audi, yellotMob, volvoAC, volvoDC]);
     console.log('All:', allMarkers);
     setEmpty(false);
+    tempEmpty = false;
     setMarkers(allMarkers);
     const filtered = filterMarkers(allMarkers, camera, filter);
     setFilteredMarkers(filtered);
