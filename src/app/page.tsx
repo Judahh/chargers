@@ -20,15 +20,15 @@ const apis = {
 
   },
   tupiLong: {
-    url: 'http://api.tupinambaenergia.com.br/stations',
+    url: 'https://api.tupinambaenergia.com.br/stations',
     method: 'get',
   },
   tupiShort: {
-    url: 'http://api.tupinambaenergia.com.br/stationsShortVersion',
+    url: 'https://api.tupinambaenergia.com.br/stationsShortVersion',
     method: 'get',
   },
   tupiDetails: {
-    url: 'http://api.tupinambaenergia.com.br/station/:stationID',
+    url: 'https://api.tupinambaenergia.com.br/station/:stationID',
     method: 'post',
   },
   zletric: {
