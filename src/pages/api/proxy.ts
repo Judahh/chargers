@@ -32,7 +32,7 @@ export default async function handler(
     headers['Content-Type'] = headers['content-type'];
 
     if (method.toUpperCase() === 'OPTIONS') {
-        return res.status(200).send();
+        return res.status(200).send({ok:true});
     }
 
     if (url.includes('audi') || url.includes('zletric')) {
