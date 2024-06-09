@@ -1,0 +1,8 @@
+.floatingBoltImg {
+  width: 15px;
+  height: 15px;
+  position: absolute;
+  top: 6px;
+  left: 9px;
+  z-index: 1000;
+}

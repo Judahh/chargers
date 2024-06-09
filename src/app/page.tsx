@@ -485,8 +485,8 @@ export default function Home() {
       method: apis.audi.method,
     });
     const data: Audi[] = (await response.json()).datas;
+    console.log('Audi:', data);
     const audi = data.map(audiToMarker);
-    console.log('Audi:', audi);
     setAudi(audi);
     updateIfEmpty(audi);
     return audi;
@@ -497,8 +497,8 @@ export default function Home() {
       method: apis.yellotMob.method,
     });
     const data: YellotMob[] = await response.json();
+    console.log('YellotMob:', data);
     const yellotMob = data.map(yellotMobToMarker);
-    console.log('YellotMob:', yellotMob);
     setYellotMob(yellotMob);
     updateIfEmpty(yellotMob);
     return yellotMob;
@@ -509,8 +509,8 @@ export default function Home() {
       method: apis.volvoAc.method,
     });
     const data: Volvo[] = (await response.json()).cargadoresac;
+    console.log('Volvo AC:', data);
     const volvo = data.map(volvoToMarker);
-    console.log('Volvo AC:', volvo);
     setVolvoAC(volvo);
     updateIfEmpty(volvo);
     return volvo;
@@ -521,8 +521,8 @@ export default function Home() {
       method: apis.volvoDc.method,
     });
     const data: Volvo[] = (await response.json()).cargadoresdc;
+    console.log('Volvo AC:', data);
     const volvo = data.map(volvoToMarker);
-    console.log('Volvo AC:', volvo);
     setVolvoAC(volvo);
     updateIfEmpty(volvo);
     return volvo;
@@ -534,7 +534,7 @@ export default function Home() {
       lng: number,
     }>((resolve, reject) => {
       navigator.geolocation.getCurrentPosition((position) => {
-        console.log(position);
+        console.log('Position:', position);
         const l = {
           lat: Number(position.coords.latitude || 0),
           lng: Number(position.coords.longitude || 0),
@@ -561,7 +561,7 @@ export default function Home() {
     const mergedMarkers = allMarkers.reduce<Marker[]>((acc, marker) => {
       const existingMarker = acc.find((m) => ((m?.api !== marker?.api) && ((m?.zipCode && m?.zipCode === marker?.zipCode) || (m?.position?.lat === marker?.position?.lat && m?.position?.lng === marker?.position?.lng) || (m?.name && m?.name?.toLowerCase() === marker?.name?.toLowerCase()) || (m?.address && m?.address?.toLowerCase() === marker?.address?.toLowerCase()))));
       if (marker.name?.includes('Villa Lobos')) {
-        console.log('Villa Lobos Existing:', existingMarker, 'New:', marker);
+        // console.log('Villa Lobos Existing:', existingMarker, 'New:', marker);
       }
       if (existingMarker) {
         // console.log('Existing:', existingMarker, 'New:', marker);
@@ -711,17 +711,17 @@ export default function Home() {
     const tMakers = [...(tempMarkers||[]), ...(markers||[])];
     if (empty && tempEmpty) {
       if(tMakers.length > 0) {
-        console.log('Merge:', tMakers.length, newMarkers.length);
+        // console.log('Merge:', tMakers.length, newMarkers.length);
         newMarkers = mergeMarkers([tMakers, newMarkers]);
       } else {
-        console.log('New (No Merge):', tMakers.length, newMarkers.length);
+        // console.log('New (No Merge):', tMakers.length, newMarkers.length);
       }
       tempMarkers = [...newMarkers];
       setMarkers(newMarkers);
       const filtered = filterMarkers(newMarkers, camera, filter);
       setFilteredMarkers(filtered);
-      console.log('New Filtered:', filtered.length);
-      console.log('New All:', newMarkers.length);
+      // console.log('New Filtered:', filtered.length);
+      // console.log('New All:', newMarkers.length);
     }
   }
 

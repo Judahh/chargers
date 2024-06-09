@@ -1,6 +1,7 @@
 import { useAdvancedMarkerRef, AdvancedMarker, InfoWindow } from "@vis.gl/react-google-maps";
 import { useState, useCallback } from "react";
 import { Marker } from "./types";
+import styles from "./markerWithInfo.module.css";
 
 type Position = {
     lat: number;
@@ -13,6 +14,12 @@ export const MarkerWithInfo = ({ position, markerConf }: { position: Position, m
     const availableMarkerImg = '/available.png';
     const busyMarkerImg = '/busy.png';
     const unknownMarkerImg = '/unknown.png';
+    const blackBoltImg = '/bolt.svg';
+    const blueBoltImg = '/bolt-b.svg';
+    const blue2BoltImg = '/bolt-b2.svg';
+    const yellowBoltImg = '/bolt-y.svg';
+    const redBoltImg = '/bolt-r.svg';
+    const greenBoltImg = '/bolt-g.svg';
     const [markerRef, marker] = useAdvancedMarkerRef();
 
     const [infoWindowShown, setInfoWindowShown] = useState(false);
@@ -26,6 +33,45 @@ export const MarkerWithInfo = ({ position, markerConf }: { position: Position, m
     // if the maps api closes the infowindow, we have to synchronize our state
     const handleClose = useCallback(() => setInfoWindowShown(false), []);
 
+    const getBoltImg = (marker: Marker) => {
+        // get the highest power plug
+        let maxPower = 0;
+        let maxPowerPlug = null;
+        marker?.plugs?.forEach((plug) => {
+            const currentPower = plug?.maxPower || 0;
+            if (currentPower > maxPower) {
+                maxPower = currentPower;
+                maxPowerPlug = plug;
+            }
+        });
+        // no plugs -> no bolt
+        // 0-5kW -> red bolt
+        // 5-10kW -> black bolt
+        // 10-30kW -> yellow bolt
+        // 30-50kW -> green bolt
+        // 50-150kW -> blue2 bolt
+        // 150+kW -> blue bolt
+        if (!maxPowerPlug) {
+            return undefined;
+        }
+        if (maxPower <= 5) {
+            return redBoltImg;
+        }
+        if (maxPower <= 10) {
+            return blackBoltImg;
+        }
+        if (maxPower <= 30) {
+            return yellowBoltImg;
+        }
+        if (maxPower <= 50) {
+            return greenBoltImg;
+        }
+        if (maxPower <= 150) {
+            return blue2BoltImg;
+        }
+        return blueBoltImg;
+    }
+
     return (
         <>
             <AdvancedMarker
@@ -34,6 +80,7 @@ export const MarkerWithInfo = ({ position, markerConf }: { position: Position, m
                 onClick={handleMarkerClick}
             >
                 <img src={markerConf.status == 'available' ? availableMarkerImg : markerConf.status == 'busy' ? busyMarkerImg : unknownMarkerImg} width={32} height={32} />
+                {getBoltImg(markerConf) && <img src={getBoltImg(markerConf)} width={5} height={5} className={styles.floatingBoltImg}/>}
             </AdvancedMarker>
 
             {infoWindowShown && (
