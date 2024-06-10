@@ -45,12 +45,12 @@ export const MarkerWithInfo = ({ position, markerConf }: { position: Position, m
             }
         });
         // no plugs -> no bolt
-        // 0-5kW -> red bolt
-        // 5-10kW -> black bolt
-        // 10-30kW -> yellow bolt
-        // 30-50kW -> green bolt
-        // 50-150kW -> blue2 bolt
-        // 150+kW -> blue bolt
+        // 0-6kW -> red bolt
+        // 6-15kW -> black bolt
+        // 15-30kW -> yellow bolt
+        // 30-60kW -> green bolt
+        // 60-120kW -> blue2 bolt
+        // 120+kW -> blue bolt
         if (!maxPowerPlug) {
             return undefined;
         }
