@@ -54,19 +54,19 @@ export const MarkerWithInfo = ({ position, markerConf }: { position: Position, m
         if (!maxPowerPlug) {
             return undefined;
         }
-        if (maxPower <= 5) {
+        if (maxPower <= 6) {
             return redBoltImg;
         }
-        if (maxPower <= 10) {
+        if (maxPower <= 15) {
             return blackBoltImg;
         }
         if (maxPower <= 30) {
             return yellowBoltImg;
         }
-        if (maxPower <= 50) {
+        if (maxPower <= 60) {
             return greenBoltImg;
         }
-        if (maxPower <= 150) {
+        if (maxPower <= 120) {
             return blue2BoltImg;
         }
         return blueBoltImg;
