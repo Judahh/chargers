@@ -73,11 +73,26 @@
   display: none;
 }
 
-.menuButton {
+.menuButtonRight {
   /* Floating menu button at the bottom */
   position: fixed;
   bottom: 1rem;
   right: 1rem;
+  z-index: 100;
+  background: var(--primary);
+  color: var(--background);
+  border: none;
+  border-radius: 50%;
+  padding: 1rem;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  transition: background 200ms;
+}
+
+.menuButtonLeft {
+  /* Floating menu button at the bottom */
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
   z-index: 100;
   background: var(--primary);
   color: var(--background);
@@ -309,3 +324,21 @@
     transform: rotate(0deg);
   }
 }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* @keyframes background {
+  0% {
+    background: var(--background-start);
+  }
+  100% {
+    background: var(--background-end);
+  }
+} */

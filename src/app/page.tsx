@@ -1,10 +1,30 @@
 'use client'
+/// <reference types="google.maps" />
 import Image from "next/image";
 import styles from "./page.module.css";
-import { APIProvider, AdvancedMarker, Map, MapCameraChangedEvent } from '@vis.gl/react-google-maps';
-import React from "react";
+import { APIProvider, AdvancedMarker, Map, MapCameraChangedEvent, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
+import React, { useEffect, useState } from "react";
 import { Audi, EzVolt, EzVoltLocation, EzVoltPin, EzVoltTariff, Marker, MarkerFilter, Tupi, Volvo, YellotMob, Zletric } from "./types";
 import { MarkerWithInfo } from "./markerWithInfo";
+
+export enum TravelMode {
+  /**
+   * Specifies a bicycling directions request.
+   */
+  BICYCLING = 'BICYCLING',
+  /**
+   * Specifies a driving directions request.
+   */
+  DRIVING = 'DRIVING',
+  /**
+   * Specifies a transit directions request.
+   */
+  TRANSIT = 'TRANSIT',
+  /**
+   * Specifies a walking directions request.
+   */
+  WALKING = 'WALKING',
+}
 
 const apis = {
   ezVolt: {
@@ -176,8 +196,34 @@ export default function Home() {
   let tempMarkers: Array<Marker> = [];
   const [filteredMarkers, setFilteredMarkers] = React.useState<Array<Marker>>([]);
   const [filter, setFilter] = React.useState<MarkerFilter>({} as MarkerFilter);
-  const [menu, setMenu] = React.useState<boolean>(false);
+  const [openFilter, setOpenFilter] = React.useState<boolean>(false);
+  const [openRoute, setOpenRoute] = React.useState<boolean>(false);
   const [empty, setEmpty] = React.useState<boolean>(true);
+  const [mapId, setMapId] = React.useState<string>('bf51a910020fa25a');
+  const routesLibrary = useMapsLibrary('routes');
+  const [directionsService, setDirectionsService] =
+    useState<google.maps.DirectionsService>();
+  const [directionsRenderer, setDirectionsRenderer] =
+    useState<google.maps.DirectionsRenderer>();
+  const [routes, setRoutes] = useState<google.maps.DirectionsRoute[]>([]);
+  const [routeIndex, setRouteIndex] = useState(0);
+  const [destinations, setDestinations] = useState<(
+    | string
+    | google.maps.LatLng
+    | google.maps.LatLngLiteral
+    | google.maps.Place)[]>([]);
+  const [travelMode, setTravelMode] = useState<TravelMode>(
+    TravelMode.DRIVING
+  );
+  const [optimizeWaypoints, setOptimizeWaypoints] = useState<boolean | undefined>(undefined);
+  const [avoidFerries, setAvoidFerries] = useState<boolean | undefined>(undefined);
+  const [avoidHighways, setAvoidHighways] = useState<boolean | undefined>(undefined);
+  const [avoidTolls, setAvoidTolls] = useState<boolean | undefined>(undefined);
+  const [provideRouteAlternatives, setProvideRouteAlternatives] = useState<boolean | undefined>(undefined);
+  const [transitOptions, setTransitOptions] = useState<google.maps.TransitOptions | undefined>(undefined);
+  const [arrivalTime, setArrivalTime] = useState<Date | null>(null);
+  const [departureTime, setDepartureTime] = useState<Date | null>(null);
+  const selected = routes[routeIndex];
   let tempEmpty = true;
 
   const getUrl = (toUrl: string, receivedQuery?: any) => {
@@ -705,12 +751,12 @@ export default function Home() {
   }
 
   const updateIfEmpty = async (newMarkers?: Marker[]) => {
-    if(!newMarkers) {
+    if (!newMarkers) {
       return;
     }
-    const tMakers = [...(tempMarkers||[]), ...(markers||[])];
+    const tMakers = [...(tempMarkers || []), ...(markers || [])];
     if (empty && tempEmpty) {
-      if(tMakers.length > 0) {
+      if (tMakers.length > 0) {
         // console.log('Merge:', tMakers.length, newMarkers.length);
         newMarkers = mergeMarkers([tMakers, newMarkers]);
       } else {
@@ -786,7 +832,8 @@ export default function Home() {
   //     });
   // }, []);
   const userMarkerImg = '/user.png';
-  const menuImg = '/filter.svg';
+  const filterImg = '/filter.svg';
+  const routeImg = '/route.svg';
 
 
   const advancedMarker = (marker: Marker, index: number) => {
@@ -804,19 +851,42 @@ export default function Home() {
     );
   }
 
+  const destinationToString = (destination: string | google.maps.LatLng | google.maps.LatLngLiteral | google.maps.Place) => {
+    if (destination == undefined) {
+      return '';
+    }
+    if (typeof destination === 'string') {
+      return destination;
+    }
+    if ('lat' in destination) {
+      // @ts-ignore
+      const lat = destination.lat || destination.lat?.();
+      // @ts-ignore
+      const lng = destination.lng || destination.lng?.();
+      return `${lat}, ${lng}`;
+    }
+    if ('location' in destination) {
+      // @ts-ignore
+      const lat = destination.location.lat || destination.location.lat?.();
+      // @ts-ignore
+      const lng = destination.location.lng || destination.location.lng?.();
+      return `${lat}, ${lng}`;
+    }
+    return '';
+  }
+
   return (
     <main className={styles.main}>
-      {/* floating menu window */}
-      <div className={menu ? styles.menu : styles.menuHidden}>
+      {/* floating filter window */}
+      <div className={openFilter ? styles.menu : styles.menuHidden}>
         <div className={styles.menuContent}>
           <div className={styles.menuHeader}>
-            <h1>Menu</h1>
-            <button onClick={() => setMenu(!menu)}>X</button>
+            <h1>Filtros</h1>
+            <button onClick={() => setOpenFilter(!openFilter)}>X</button>
           </div>
           <div className={styles.menuBody}>
-            <h2>Filtros</h2>
             <div className={styles.filter}>
-              <h3>API</h3>
+              <h2>API</h2>
               <select onChange={(e) => setFilter({ ...filter, api: e.target.value as any })}>
                 <option value="">Selecione</option>
                 <option value="ezvolt">EZ Volt</option>
@@ -828,7 +898,7 @@ export default function Home() {
               </select>
             </div>
             <div className={styles.filter}>
-              <h3>Status</h3>
+              <h2>Status</h2>
               <select onChange={(e) => setFilter({ ...filter, status: e.target.value as any })}>
                 <option value="">Selecione</option>
                 <option value="available">Disponível</option>
@@ -837,7 +907,7 @@ export default function Home() {
               </select>
             </div>
             <div className={styles.filter}>
-              <h3>Privado</h3>
+              <h2>Privado</h2>
               <select onChange={(e) => setFilter({ ...filter, isPrivate: e.target.value === 'true' })}>
                 <option value="">Selecione</option>
                 <option value="true">Sim</option>
@@ -845,7 +915,7 @@ export default function Home() {
               </select>
             </div>
             <div className={styles.filter}>
-              <h3>Rating</h3>
+              <h2>Avaliação</h2>
               <select onChange={(e) => setFilter({ ...filter, rating: parseInt(e.target.value) })}>
                 <option value="">Selecione</option>
                 <option value="1">1 Estrela</option>
@@ -856,7 +926,7 @@ export default function Home() {
               </select>
             </div>
             <div className={styles.filter}>
-              <h3>Total de Avaliações</h3>
+              <h2>Total de Avaliações</h2>
               <select onChange={(e) => setFilter({ ...filter, totalRatings: parseInt(e.target.value) })}>
                 <option value="">Selecione</option>
                 <option value="1">1 Avaliação</option>
@@ -867,7 +937,7 @@ export default function Home() {
               </select>
             </div>
             <div className={styles.filter}>
-              <h3>Estacionamento</h3>
+              <h2>Estacionamento</h2>
               <select onChange={(e) => setFilter({ ...filter, parking: { isFree: e.target.value === 'true' } })}>
                 <option value="">Selecione</option>
                 <option value="true">Gratuito</option>
@@ -875,7 +945,7 @@ export default function Home() {
               </select>
             </div>
             <div className={styles.filter}>
-              <h3>Tomada</h3>
+              <h2>Tomada</h2>
               <select onChange={(e) => setFilter({ ...filter, plugs: { type: e.target.value as any } })}>
                 <option value="">Selecione</option>
                 <option value="type1">Tipo 1</option>
@@ -896,10 +966,105 @@ export default function Home() {
           </div>
         </div>
       </div>
+      {/* floating route window */}
+      <div className={openRoute ? styles.menu : styles.menuHidden}>
+        <div className={styles.menuContent}>
+          <div className={styles.menuHeader}>
+            <h1>Rota</h1>
+            <button onClick={() => setOpenRoute(!openRoute)}>X</button>
+          </div>
+          <div className={styles.menuBody}>
+            <div className={styles.filter}>
+              {/* Inputs ordenáveis usando drag e botões de adição e remoção de inputs */}
+              <div className={styles.destinations}>
+                {destinations.map((destination, index) => (
+                  <div key={index} className={styles.destination}>
+                    <input
+                      type="text"
+                      value={destinationToString(destination)}
+                      onChange={(e) => {
+                        const newDestinations = [...destinations];
+                        newDestinations[index] = e.target.value;
+                        setDestinations(newDestinations);
+                      }}
+                    />
+                    <button onClick={() => {
+                      const newDestinations = [...destinations];
+                      navigator.geolocation.getCurrentPosition((position) => {
+                        newDestinations[index] = { lat: position.coords.latitude, lng: position.coords.longitude };
+                        setDestinations(newDestinations);
+                      });
+                    }}>Localização Atual</button>
+                    <button onClick={() => {
+                      const newDestinations = [...destinations];
+                      newDestinations.splice(index, 1);
+                      setDestinations(newDestinations);
+                    }}>-</button>
+                  </div>
+                ))}
+                <button onClick={() => setDestinations([...destinations, ''])}>+</button>
+                <button onClick={() => setDestinations([])}>Limpar</button>
+              </div>
+              <div className={styles.filter}>
+                <h2>Modo de Viagem</h2>
+                <select onChange={(e) => setTravelMode(e.target.value as any)}>
+                  <option value="DRIVING">Carro</option>
+                  <option value="WALKING">Andando</option>
+                  <option value="BICYCLING">Bicicleta</option>
+                  <option value="TRANSIT">Transporte Público</option>
+                </select>
+              </div>
+              <div className={styles.filter}>
+                <h2>Alternativas de Rota</h2>
+                <select onChange={(e) => setProvideRouteAlternatives(e.target.value === 'true')}>
+                  <option value="true">Sim</option>
+                  <option value="false">Não</option>
+                </select>
+              </div>
+              <div className={styles.filter}>
+                <h2>Otimizar Pontos de Parada</h2>
+                <select onChange={(e) => setOptimizeWaypoints(e.target.value === 'true')}>
+                  <option value="true">Sim</option>
+                  <option value="false">Não</option>
+                </select>
+              </div>
+              <div className={styles.filter}>
+                <h2>Evitar Balsas</h2>
+                <select onChange={(e) => setAvoidFerries(e.target.value === 'true')}>
+                  <option value="true">Sim</option>
+                  <option value="false">Não</option>
+                </select>
+              </div>
+              <div className={styles.filter}>
+                <h2>Evitar Rodovias</h2>
+                <select onChange={(e) => setAvoidHighways(e.target.value === 'true')}>
+                  <option value="true">Sim</option>
+                  <option value="false">Não</option>
+                </select>
+              </div>
+              <div className={styles.filter}>
+                <h2>Evitar Pedágios</h2>
+                <select onChange={(e) => setAvoidTolls(e.target.value === 'true')}>
+                  <option value="true">Sim</option>
+                  <option value="false">Não</option>
+                </select>
+              </div>
+              <div className={styles.filter}>
+                <h2>Horário de Chegada</h2>
+                <input type="datetime-local" onChange={(e) => setArrivalTime(new Date(e.target.value))} />
+              </div>
+              <div className={styles.filter}>
+                <h2>Horário de Partida</h2>
+                <input type="datetime-local" onChange={(e) => setDepartureTime(new Date(e.target.value))} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <APIProvider apiKey={"AIzaSyDTrUbqr2Yglzf138HBZAiU48Hnvpk7mvg"}>
         <Map
-          id="map"
-          mapId={'bf51a910020fa25a'}
+          id={mapId}
+          mapId={mapId}
           style={{ width: '100vw', height: '100vh' }}
           defaultCenter={camera.center}
           defaultZoom={camera.zoom}
@@ -909,11 +1074,138 @@ export default function Home() {
         >
           {userMarker()}
           {filteredMarkers.map(advancedMarker)}
+          <Directions
+            destinations={destinations}
+            travelMode={travelMode}
+            provideRouteAlternatives={provideRouteAlternatives}
+            optimizeWaypoints={optimizeWaypoints}
+            avoidFerries={avoidFerries}
+            avoidHighways={avoidHighways}
+            avoidTolls={avoidTolls}
+            arrivalTime={arrivalTime}
+            departureTime={departureTime}
+          />
         </Map>
       </APIProvider>
-      {/* floating menu button */}
-      <button className={styles.menuButton} onClick={() => setMenu(!menu)}>
-        <img src={menuImg} width={32} height={32} />
+      {/* floating route button */}
+      <button className={styles.menuButtonLeft} onClick={() => setOpenRoute(!openRoute)}>
+        <img src={routeImg} width={32} height={32} />
       </button>
+      {/* floating filter button */}
+      <button className={styles.menuButtonRight} onClick={() => setOpenFilter(!openFilter)}>
+        <img src={filterImg} width={32} height={32} />
+      </button>
+
     </main>);
+}
+
+function Directions({destinations, travelMode, provideRouteAlternatives, optimizeWaypoints, avoidFerries, avoidHighways, avoidTolls, arrivalTime, departureTime}: {
+  destinations?: (string | google.maps.LatLng | google.maps.LatLngLiteral | google.maps.Place)[],
+  travelMode?: google.maps.TravelMode,
+  provideRouteAlternatives?: boolean,
+  optimizeWaypoints?: boolean,
+  avoidFerries?: boolean,
+  avoidHighways?: boolean,
+  avoidTolls?: boolean,
+  arrivalTime?: Date | null,
+  departureTime?: Date | null,
+}) {
+  const map = useMap();
+  const routesLibrary = useMapsLibrary('routes');
+  const [directionsService, setDirectionsService] =
+    useState<google.maps.DirectionsService>();
+  const [directionsRenderer, setDirectionsRenderer] =
+    useState<google.maps.DirectionsRenderer>();
+  const [routes, setRoutes] = useState<google.maps.DirectionsRoute[]>([]);
+  const [routeIndex, setRouteIndex] = useState(0);
+  const selected = routes[routeIndex];
+  const leg = selected?.legs[0];
+
+  // Initialize directions service and renderer
+  useEffect(() => {
+    console.log('Initialize Directions Service and Renderer');
+    console.log('Routes Library:', routesLibrary);
+    console.log('Map:', map);
+    if (!routesLibrary || !map) return;
+    setDirectionsService(new routesLibrary.DirectionsService());
+    setDirectionsRenderer(new routesLibrary.DirectionsRenderer({ map }));
+  }, [routesLibrary, map]);
+
+  // Use directions service
+  useEffect(() => {
+    console.log('Use Directions Service');
+    console.log('Destinations:', destinations);
+    console.log('Directions Service:', directionsService);
+    console.log('Directions Renderer:', directionsRenderer);
+
+    if (!directionsService || !directionsRenderer || !destinations || destinations.length < 2 || destinations.map((r)=>r.toString()).filter((r)=>r.trim().length > 0).length > 0) return;
+
+    // Get directions
+    // using destinations as waypoints
+    // the first destination is the origin
+    // the last destination is the destination
+    // the others are waypoints (stops/stopovers)
+
+    directionsService
+      .route({
+        origin: destinations[0],
+        destination: destinations[destinations.length - 1],
+        travelMode,
+        provideRouteAlternatives,
+        optimizeWaypoints,
+        avoidFerries,
+        avoidHighways,
+        avoidTolls,
+        transitOptions: arrivalTime || departureTime ? {
+          arrivalTime,
+          departureTime,
+        } : undefined,
+        waypoints: destinations.slice(1, destinations.length - 1).map((destination) => ({
+          location: destination,
+          stopover: true,
+        })),
+      })
+      .then(response => {
+        console.log('Directions Response:', response);
+        directionsRenderer.setDirections(response);
+        setRoutes(response.routes);
+        setRouteIndex(0);
+      }).catch(error => {
+        console.error('Directions Error:', error);
+      });
+
+    return () => directionsRenderer.setMap(null);
+  }, [directionsService, directionsRenderer, destinations, travelMode, provideRouteAlternatives, optimizeWaypoints, avoidFerries, avoidHighways, avoidTolls, arrivalTime, departureTime]);
+
+  // Update direction route
+  useEffect(() => {
+    if (!directionsRenderer) return;
+    directionsRenderer.setRouteIndex(routeIndex);
+  }, [routeIndex, directionsRenderer]);
+
+  if (!leg) return null;
+
+  // return null;
+
+  return (
+    <div className="directions">
+      <h2>{selected.summary}</h2>
+      <p>
+        {leg.start_address.split(',')[0]} to {leg.end_address.split(',')[0]}
+      </p>
+      <p>Distance: {leg.distance?.text}</p>
+      <p>Duration: {leg.duration?.text}</p>
+
+      <h2>Other Routes</h2>
+      <ul>
+        {routes.map((route, index) => (
+          <li key={route.summary}>
+            <button onClick={() => setRouteIndex(index)}>
+              {route.summary}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
